@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astra AI — Zemljevid znanja</title>
+<style>
+  :root{
+    --bg:#0a0b0f;
+    --panel:#111318;
+    --panel-2:#15181f;
+    --node:#14171e;
+    --node-border:#232833;
+    --text:#e7eaf0;
+    --text-dim:#8b93a3;
+    --text-mute:#5c6473;
+    --accent:#3b6ef6;
+    --green:#37d17a;
+    --yellow:#f2b53a;
+    --red:#f0554d;
+    --shadow:0 8px 30px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+    background:radial-gradient(1200px 800px at 60% 20%,#12141b 0%,var(--bg) 70%);
+    color:var(--text);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .topbar{
+    display:flex;align-items:center;justify-content:center;
+    padding:18px 28px;position:relative;
+  }
+  .brand{
+    position:absolute;left:28px;display:flex;align-items:center;gap:8px;
+    font-weight:700;font-size:20px;letter-spacing:-.5px;
+  }
+  .brand .logo{
+    width:30px;height:30px;border-radius:9px;
+    background:linear-gradient(135deg,#4a7bff,#8b5cf6);
+    display:flex;align-items:center;justify-content:center;font-size:16px;
+  }
+  .brand .ai{font-size:11px;background:#20242e;padding:2px 6px;border-radius:6px;color:#9aa4b6}
+  .segmented{
+    display:flex;gap:4px;background:#12151c;border:1px solid #1e222b;
+    border-radius:12px;padding:4px;
+  }
+  .segmented button{
+    background:transparent;border:0;color:var(--text-dim);
+    padding:8px 18px;border-radius:9px;font-size:14px;cursor:pointer;font-weight:500;
+    transition:.2s;
+  }
+  .segmented button.active{background:#2a2f3a;color:#fff}
+  .avatar{position:absolute;right:28px;display:flex;align-items:center;gap:14px}
+  .streak{display:flex;align-items:center;gap:6px;background:#12151c;border:1px solid #1e222b;padding:6px 12px;border-radius:20px;font-size:13px;color:var(--text-dim)}
+  .avatar .pic{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#f2994a,#eb5757)}
+
+  .layout{
+    display:grid;grid-template-columns:1fr 340px;gap:22px;
+    padding:8px 28px 28px;max-width:1500px;margin:0 auto;
+  }
+
+  .heading{display:flex;align-items:center;gap:10px;margin:8px 4px 18px}
+  .heading h1{font-size:30px;font-weight:700;letter-spacing:-.5px}
+  .heading .info{width:20px;height:20px;border-radius:50%;border:1px solid #333a47;color:var(--text-mute);font-size:12px;display:flex;align-items:center;justify-content:center}
+
+  .controls{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+  .tabs{display:flex;gap:10px;background:#0e1016;border:1px solid #1b1f28;border-radius:16px;padding:8px;overflow:auto}
+  .tab{
+    display:flex;align-items:center;gap:9px;background:transparent;border:0;
+    color:var(--text-dim);padding:11px 18px;border-radius:11px;font-size:15px;cursor:pointer;
+    white-space:nowrap;font-weight:500;transition:.2s;
+  }
+  .tab .ic{font-size:16px;width:20px;text-align:center}
+  .tab:hover{color:#cdd3df;background:#171a22}
+  .tab.active{background:linear-gradient(135deg,#3b6ef6,#3457d5);color:#fff;box-shadow:0 6px 18px rgba(59,110,246,.35)}
+  .tab.more{color:var(--text-mute);padding:11px 14px}
+
+  .period{display:flex;align-items:center;gap:8px;background:#0e1016;border:1px solid #1b1f28;color:var(--text-dim);padding:11px 16px;border-radius:12px;font-size:14px;cursor:pointer;white-space:nowrap}
+
+  .graph-wrap{
+    position:relative;background:linear-gradient(180deg,#0c0e14,#0a0b10);
+    border:1px solid #171a22;border-radius:20px;min-height:640px;overflow:hidden;
+  }
+  .graph{position:relative;width:100%;height:660px;transform-origin:center center;transition:transform .25s ease}
+  svg.edges{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+  .node{
+    position:absolute;transform:translate(-50%,-50%) scale(.6);
+    background:var(--node);border:1px solid var(--node-border);
+    border-radius:16px;padding:14px 16px;min-width:132px;cursor:pointer;
+    opacity:0;filter:blur(2px);
+    transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s,border-color .25s;
+    box-shadow:0 6px 16px rgba(0,0,0,.35);
+  }
+  .node.show{opacity:1;filter:blur(0);transform:translate(-50%,-50%) scale(1)}
+  .node:hover{transform:translate(-50%,-50%) scale(1.06);border-color:#3d4657;box-shadow:0 12px 30px rgba(0,0,0,.5);z-index:5}
+  .node.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,110,246,.4),0 12px 30px rgba(0,0,0,.55)}
+  .node .row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .node .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .node .ic{width:30px;height:30px;border-radius:9px;background:#1c2029;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:8px}
+  .node .name{font-size:14px;font-weight:600;color:#eef1f6}
+  .node .pct{font-size:13px;color:var(--text-dim);margin-bottom:8px}
+  .node .bar{height:4px;border-radius:3px;background:#20242e;overflow:hidden}
+  .node .bar span{display:block;height:100%;border-radius:3px;width:0;transition:width .8s ease .2s}
+
+  /* central node */
+  .node.center{
+    min-width:150px;padding:22px 20px;text-align:center;
+    background:linear-gradient(180deg,#191d26,#12151c);
+    border:1px solid #2c333f;border-radius:22px;
+    box-shadow:0 0 0 1px rgba(242,181,58,.15),0 18px 50px rgba(0,0,0,.6);
+  }
+  .node.center .glyph{width:52px;height:52px;border-radius:14px;background:#20242e;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:26px}
+  .node.center .name{font-size:19px}
+  .node.center .big{font-size:22px;font-weight:700;color:var(--yellow);margin-top:6px}
+
+  .hint{
+    display:flex;align-items:center;gap:10px;position:absolute;left:20px;bottom:18px;right:160px;
+    color:var(--text-dim);font-size:13px;background:rgba(14,16,22,.6);padding:10px 14px;border-radius:12px;border:1px solid #1a1e27;backdrop-filter:blur(4px)
+  }
+  .zoom{position:absolute;right:20px;bottom:18px;display:flex;align-items:center;gap:10px;background:#0e1016;border:1px solid #1b1f28;border-radius:12px;padding:6px 10px}
+  .zoom button{background:#1a1e27;border:0;color:var(--text);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:16px}
+  .zoom span{font-size:13px;color:var(--text-dim);min-width:44px;text-align:center}
+
+  /* right panel */
+  .side{display:flex;flex-direction:column;gap:18px}
+  .card{background:var(--panel);border:1px solid #1a1e27;border-radius:18px;padding:22px}
+  .card h3{font-size:18px;font-weight:700}
+  .card .sub{font-size:13px;color:var(--text-dim);margin-top:2px}
+
+  .ring-wrap{display:flex;justify-content:center;margin:18px 0 22px}
+  .ring{position:relative;width:170px;height:170px}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .center-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .center-txt b{font-size:38px;font-weight:700}
+  .ring .center-txt small{font-size:12px;color:var(--text-dim)}
+
+  .legend .lrow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;font-size:14px}
+  .legend .lleft{display:flex;align-items:center;gap:10px;color:var(--text-dim)}
+  .legend .dot{width:9px;height:9px;border-radius:50%}
+  .legend .val{font-weight:600}
+
+  .rec-title{font-size:14px;color:var(--text-dim);margin:4px 0 12px;font-weight:600}
+  .rec .rrow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;font-size:14px}
+  .rec .rleft{display:flex;align-items:center;gap:10px}
+  .rec .rleft .dot{width:9px;height:9px;border-radius:50%;border:2px solid;background:transparent}
+
+  .cta{width:100%;margin-top:18px;padding:14px;border:0;border-radius:14px;cursor:pointer;
+    background:linear-gradient(135deg,#2440a8,#1b2c6b);color:#fff;font-size:15px;font-weight:600;
+    box-shadow:0 8px 24px rgba(36,64,168,.4);border:1px solid #3457d5;transition:.2s}
+  .cta:hover{filter:brightness(1.12);transform:translateY(-1px)}
+
+  .fade{animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  @media(max-width:1080px){.layout{grid-template-columns:1fr}.side{order:-1}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="logo">✦</span> astra <span class="ai">AI</span></div>
+  <div class="segmented">
+    <button>Vprašaj</button>
+    <button>Priprava na test</button>
+    <button class="active">Moj razred</button>
+  </div>
+  <div class="avatar">
+    <div class="streak">🔥 0</div>
+    <div class="pic"></div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- LEFT -->
+  <div class="main">
+    <div class="heading">
+      <h1>Zemljevid znanja</h1>
+      <span class="info">i</span>
+    </div>
+
+    <div class="controls">
+      <div class="tabs" id="tabs"></div>
+      <div class="period">📅 Vsi časovni obdobji ▾</div>
+    </div>
+
+    <div class="graph-wrap">
+      <div class="graph" id="graph">
+        <svg class="edges" id="edges"></svg>
+      </div>
+      <div class="hint">💡 <b style="color:#c9cfdb">Nasvet:</b>&nbsp;Klikni na temo, da vidiš podrobnosti in priporočene vaje.</div>
+      <div class="zoom"><button id="zoomOut">−</button><span id="zoomLbl">100%</span><button id="zoomIn">+</button></div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="side">
+    <div class="card">
+      <h3 id="sTitle">Matematika</h3>
+      <div class="sub">Pregled znanja</div>
+      <div class="ring-wrap">
+        <div class="ring">
+          <svg width="170" height="170">
+            <circle cx="85" cy="85" r="72" fill="none" stroke="#20242e" stroke-width="14"/>
+            <circle id="ring" cx="85" cy="85" r="72" fill="none" stroke="var(--yellow)" stroke-width="14"
+              stroke-linecap="round" stroke-dasharray="452" stroke-dashoffset="452" style="transition:stroke-dashoffset 1s ease"/>
+          </svg>
+          <div class="center-txt"><b id="ringPct">62%</b><small>Skupno znanje</small></div>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="lrow"><span class="lleft"><span class="dot" style="background:var(--green)"></span>Močno</span><span class="val" id="lStrong">35%</span></div>
+        <div class="lrow"><span class="lleft"><span class="dot" style="background:var(--yellow)"></span>Srednje</span><span class="val" id="lMed">33%</span></div>
+        <div class="lrow"><span class="lleft"><span class="dot" style="background:var(--red)"></span>Šibko</span><span class="val" id="lWeak">32%</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="rec-title">Priporočeno za ponovitev</div>
+      <div class="rec" id="rec"></div>
+      <button class="cta">✦ Ustvari učni načrt</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Data per subject ---------- */
+const clr = p => p>=70 ? 'var(--green)' : p>=50 ? 'var(--yellow)' : 'var(--red)';
+
+const SUBJECTS = {
+  Matematika:{
+    icon:'Σ', glyph:'Σ', center:62,
+    strong:35, medium:33, weak:32,
+    rec:[['Integrali',28],['Limite',34],['Kvadratna funkcija',39]],
+    nodes:[
+      {n:'Algebra',p:74,ic:'ƒ(x)',x:37,y:47},
+      {n:'Enačbe',p:82,ic:'=',x:24,y:52},
+      {n:'Neenačbe',p:68,ic:'≠',x:24,y:64},
+      {n:'Geometrija',p:55,ic:'▢',x:57,y:47},
+      {n:'Trikotniki',p:72,ic:'△',x:71,y:47},
+      {n:'Krogi',p:41,ic:'◯',x:71,y:60},
+      {n:'Funkcije',p:48,ic:'📈',x:35,y:88},
+      {n:'Linearna',p:76,ic:'╱',x:26,y:103},
+      {n:'Kvadratna',p:39,ic:'∪',x:26,y:116},
+      {n:'Statistika',p:67,ic:'▥',x:49,y:114},
+      {n:'Analiza',p:38,ic:'∫',x:60,y:90},
+      {n:'Limite',p:34,ic:'lim',x:72,y:88},
+      {n:'Izvodi',p:42,ic:'d/dx',x:71,y:103},
+      {n:'Integrali',p:28,ic:'∮',x:71,y:116},
+    ]
+  },
+  Fizika:{
+    icon:'⚛', glyph:'⚛', center:58,
+    strong:30, medium:40, weak:30,
+    rec:[['Termodinamika',31],['Kvantna fizika',22],['Nihanja',44]],
+    nodes:[
+      {n:'Mehanika',p:78,ic:'⚙',x:35,y:48},
+      {n:'Kinematika',p:81,ic:'→',x:23,y:52},
+      {n:'Dinamika',p:64,ic:'F',x:23,y:64},
+      {n:'Energija',p:70,ic:'E',x:57,y:47},
+      {n:'Delo',p:66,ic:'W',x:71,y:47},
+      {n:'Moč',p:52,ic:'P',x:71,y:60},
+      {n:'Elektrika',p:45,ic:'⚡',x:35,y:88},
+      {n:'Tokokrogi',p:58,ic:'◉',x:26,y:103},
+      {n:'Magnetizem',p:42,ic:'🧲',x:26,y:116},
+      {n:'Valovanje',p:60,ic:'∿',x:49,y:114},
+      {n:'Optika',p:49,ic:'🔦',x:60,y:90},
+      {n:'Nihanja',p:44,ic:'~',x:72,y:88},
+      {n:'Termodinamika',p:31,ic:'🌡',x:71,y:103},
+      {n:'Kvantna',p:22,ic:'ℏ',x:71,y:116},
+    ]
+  },
+  Kemija:{
+    icon:'⚗', glyph:'⚗', center:54,
+    strong:28, medium:36, weak:36,
+    rec:[['Organska kemija',26],['Redoks reakcije',33],['Kislina-baza',41]],
+    nodes:[
+      {n:'Atomi',p:80,ic:'⚛',x:35,y:48},
+      {n:'Periodni sistem',p:75,ic:'▦',x:22,y:52},
+      {n:'Vezi',p:63,ic:'—',x:23,y:64},
+      {n:'Reakcije',p:57,ic:'⇌',x:57,y:47},
+      {n:'Stehiometrija',p:68,ic:'∑',x:72,y:47},
+      {n:'Redoks',p:33,ic:'e⁻',x:71,y:60},
+      {n:'Raztopine',p:55,ic:'💧',x:35,y:88},
+      {n:'Koncentracija',p:71,ic:'%',x:26,y:103},
+      {n:'Kislina-baza',p:41,ic:'pH',x:26,y:116},
+      {n:'Elektrokemija',p:47,ic:'🔋',x:49,y:114},
+      {n:'Organska',p:26,ic:'⬡',x:60,y:90},
+      {n:'Ogljikovodiki',p:38,ic:'CH',x:72,y:88},
+      {n:'Alkoholi',p:44,ic:'OH',x:71,y:103},
+      {n:'Polimeri',p:35,ic:'∞',x:71,y:116},
+    ]
+  },
+  Biologija:{
+    icon:'🧬', glyph:'🧬', center:66,
+    strong:42, medium:32, weak:26,
+    rec:[['Genetika',37],['Evolucija',40],['Ekosistemi',45]],
+    nodes:[
+      {n:'Celica',p:84,ic:'🔬',x:35,y:48},
+      {n:'Membrana',p:79,ic:'▢',x:23,y:52},
+      {n:'Organeli',p:72,ic:'●',x:23,y:64},
+      {n:'Genetika',p:37,ic:'🧬',x:57,y:47},
+      {n:'DNA',p:68,ic:'⛓',x:72,y:47},
+      {n:'Dedovanje',p:51,ic:'⚭',x:71,y:60},
+      {n:'Fiziologija',p:62,ic:'❤',x:35,y:88},
+      {n:'Živčevje',p:74,ic:'⚡',x:26,y:103},
+      {n:'Presnova',p:58,ic:'♻',x:26,y:116},
+      {n:'Ekologija',p:65,ic:'🌿',x:49,y:114},
+      {n:'Ekosistemi',p:45,ic:'🌍',x:60,y:90},
+      {n:'Evolucija',p:40,ic:'🐒',x:72,y:88},
+      {n:'Fotosinteza',p:70,ic:'🌞',x:71,y:103},
+      {n:'Rastline',p:63,ic:'🌱',x:71,y:116},
+    ]
+  },
+  Angleščina:{
+    icon:'🅰', glyph:'Aa', center:71,
+    strong:48, medium:30, weak:22,
+    rec:[['Pogojni stavki',43],['Frazni glagoli',39],['Poslušanje',47]],
+    nodes:[
+      {n:'Slovnica',p:76,ic:'📘',x:35,y:48},
+      {n:'Časi',p:82,ic:'⏱',x:23,y:52},
+      {n:'Pogojni stavki',p:43,ic:'if',x:23,y:64},
+      {n:'Besedišče',p:69,ic:'🔤',x:57,y:47},
+      {n:'Frazni glagoli',p:39,ic:'⇄',x:72,y:47},
+      {n:'Idiomi',p:52,ic:'💬',x:71,y:60},
+      {n:'Branje',p:78,ic:'📖',x:35,y:88},
+      {n:'Razumevanje',p:73,ic:'👓',x:26,y:103},
+      {n:'Poslušanje',p:47,ic:'🎧',x:26,y:116},
+      {n:'Pisanje',p:64,ic:'✍',x:49,y:114},
+      {n:'Eseji',p:55,ic:'📝',x:60,y:90},
+      {n:'Govor',p:68,ic:'🗣',x:72,y:88},
+      {n:'Izgovorjava',p:60,ic:'🔊',x:71,y:103},
+      {n:'Debata',p:58,ic:'⚖',x:71,y:116},
+    ]
+  },
+};
+
+const CENTER = {x:49, y:74}; // % position of central node
+// remap stored y (47..116) into the visible graph band (8..90%)
+const MY = y => (y - 47) / (116 - 47) * 82 + 8;
+
+/* ---------- Tabs ---------- */
+const tabsEl = document.getElementById('tabs');
+const names = Object.keys(SUBJECTS);
+let current = 'Matematika';
+
+names.forEach(name=>{
+  const b = document.createElement('button');
+  b.className = 'tab' + (name===current?' active':'');
+  b.innerHTML = `<span class="ic">${SUBJECTS[name].icon}</span>${name}`;
+  b.onclick = ()=>{ current=name; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); b.classList.add('active'); render(); };
+  tabsEl.appendChild(b);
+});
+const more = document.createElement('button');
+more.className='tab more'; more.textContent='›';
+tabsEl.appendChild(more);
+
+/* ---------- Render graph ---------- */
+const graph = document.getElementById('graph');
+const edges = document.getElementById('edges');
+let selected = null;
+
+function render(){
+  const d = SUBJECTS[current];
+
+  // clear old nodes
+  graph.querySelectorAll('.node').forEach(n=>n.remove());
+  edges.innerHTML='';
+  selected=null;
+
+  const W = graph.clientWidth, H = graph.clientHeight;
+  const px = xp => xp/100*W, py = yp => yp/100*H;
+
+  // edges from center to each node
+  d.nodes.forEach(nd=>{
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    const x1=px(CENTER.x), y1=py(MY(CENTER.y)), x2=px(nd.x), y2=py(MY(nd.y));
+    const mx=(x1+x2)/2;
+    path.setAttribute('d',`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
+    path.setAttribute('stroke', clr(nd.p));
+    path.setAttribute('stroke-width','1.6');
+    path.setAttribute('fill','none');
+    path.setAttribute('opacity','0');
+    path.style.transition='opacity .6s ease';
+    edges.appendChild(path);
+    setTimeout(()=>path.setAttribute('opacity','0.55'), 300);
+  });
+
+  // central node
+  const c = document.createElement('div');
+  c.className='node center';
+  c.style.left=CENTER.x+'%'; c.style.top=MY(CENTER.y)+'%';
+  c.innerHTML=`<div class="glyph">${d.glyph}</div><div class="name">${current}</div><div class="big">${d.center}%</div>`;
+  graph.appendChild(c);
+  setTimeout(()=>c.classList.add('show'),30);
+
+  // topic nodes with staggered animation
+  d.nodes.forEach((nd,i)=>{
+    const el=document.createElement('div');
+    el.className='node';
+    el.style.left=nd.x+'%'; el.style.top=MY(nd.y)+'%';
+    el.innerHTML=`
+      <div class="ic">${nd.ic}</div>
+      <div class="row"><span class="dot" style="background:${clr(nd.p)}"></span><span class="name">${nd.n}</span></div>
+      <div class="pct">${nd.p}%</div>
+      <div class="bar"><span style="background:${clr(nd.p)}"></span></div>`;
+    el.onclick=()=>{
+      document.querySelectorAll('.node').forEach(n=>n.classList.remove('selected'));
+      el.classList.add('selected'); selected=nd.n;
+    };
+    graph.appendChild(el);
+    setTimeout(()=>{
+      el.classList.add('show');
+      el.querySelector('.bar span').style.width=nd.p+'%';
+    }, 120 + i*55);
+  });
+
+  // side panel
+  document.getElementById('sTitle').textContent=current;
+  document.getElementById('ringPct').textContent=d.center+'%';
+  document.getElementById('lStrong').textContent=d.strong+'%';
+  document.getElementById('lMed').textContent=d.medium+'%';
+  document.getElementById('lWeak').textContent=d.weak+'%';
+
+  const ring=document.getElementById('ring');
+  const circ=452;
+  ring.style.strokeDashoffset=circ;
+  setTimeout(()=>ring.style.strokeDashoffset=circ*(1-d.center/100),100);
+
+  const rec=document.getElementById('rec');
+  rec.className='rec fade';
+  rec.innerHTML=d.rec.map(([name,p])=>
+    `<div class="rrow"><span class="rleft"><span class="dot" style="border-color:${clr(p)}"></span>${name}</span><span class="val" style="color:${clr(p)}">${p}%</span></div>`
+  ).join('');
+}
+
+render();
+
+/* ---------- Zoom ---------- */
+let zoom = 1;
+const zoomLbl = document.getElementById('zoomLbl');
+function applyZoom(){
+  graph.style.transform = `scale(${zoom})`;
+  zoomLbl.textContent = Math.round(zoom*100)+'%';
+}
+document.getElementById('zoomIn').onclick  = ()=>{ zoom = Math.min(1.6, zoom+0.1); applyZoom(); };
+document.getElementById('zoomOut').onclick = ()=>{ zoom = Math.max(0.6, zoom-0.1); applyZoom(); };
+
+window.addEventListener('resize',()=>{ // reposition edges on resize
+  const d=SUBJECTS[current];
+  const W=graph.clientWidth,H=graph.clientHeight;
+  const px=xp=>xp/100*W, py=yp=>yp/100*H;
+  edges.querySelectorAll('path').forEach((path,i)=>{
+    const nd=d.nodes[i];
+    const x1=px(CENTER.x),y1=py(MY(CENTER.y)),x2=px(nd.x),y2=py(MY(nd.y)),mx=(x1+x2)/2;
+    path.setAttribute('d',`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
+  });
+});
+</script>
+</body>
+</html>
