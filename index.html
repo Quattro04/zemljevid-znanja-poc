@@ -65,7 +65,23 @@
 
   .heading{display:flex;align-items:center;gap:10px;margin:8px 4px 18px}
   .heading h1{font-size:30px;font-weight:700;letter-spacing:-.5px}
-  .heading .info{width:20px;height:20px;border-radius:50%;border:1px solid #333a47;color:var(--text-mute);font-size:12px;display:flex;align-items:center;justify-content:center}
+  .heading .info{position:relative;width:20px;height:20px;border-radius:50%;border:1px solid #333a47;color:var(--text-mute);font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;outline:none}
+  .heading .info:hover,.heading .info:focus{border-color:var(--accent);color:#cdd3df}
+  .heading .info .tooltip{
+    position:absolute;top:130%;left:0;z-index:20;width:300px;
+    background:#171a22;border:1px solid #2a3040;border-radius:14px;
+    padding:14px 16px;font-size:13px;font-weight:400;line-height:1.5;color:var(--text-dim);
+    box-shadow:0 16px 40px rgba(0,0,0,.55);
+    opacity:0;visibility:hidden;transform:translateY(-6px);
+    transition:opacity .2s,transform .2s,visibility .2s;pointer-events:none;
+    display:flex;flex-direction:column;gap:8px;text-align:left;
+  }
+  .heading .info .tooltip b{color:#eef1f6;font-size:14px}
+  .heading .info .tooltip::before{content:"";position:absolute;bottom:100%;left:10px;border:7px solid transparent;border-bottom-color:#2a3040}
+  .heading .info:hover .tooltip,.heading .info:focus .tooltip,.heading .info.open .tooltip{opacity:1;visibility:visible;transform:translateY(0)}
+  .tt-legend{display:flex;flex-direction:column;gap:5px;margin:2px 0}
+  .tt-legend span{display:flex;align-items:center;gap:8px;color:var(--text-dim)}
+  .tt-legend i{width:9px;height:9px;border-radius:50%;flex:none}
 
   .controls{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
   .tabs{display:flex;gap:10px;background:#0e1016;border:1px solid #1b1f28;border-radius:16px;padding:8px;overflow:auto}
@@ -157,6 +173,43 @@
   .fade{animation:fade .4s ease}
   @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
+  /* Detail modal */
+  .modal-overlay{
+    position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+    background:rgba(4,5,8,.6);backdrop-filter:blur(4px);
+    opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;padding:20px;
+  }
+  .modal-overlay.open{opacity:1;visibility:visible}
+  .modal-card{
+    position:relative;width:420px;max-width:100%;background:linear-gradient(180deg,#171a22,#111318);
+    border:1px solid #2a3040;border-radius:20px;padding:26px;box-shadow:0 30px 80px rgba(0,0,0,.6);
+    transform:translateY(14px) scale(.96);transition:transform .28s cubic-bezier(.34,1.56,.64,1);
+  }
+  .modal-overlay.open .modal-card{transform:translateY(0) scale(1)}
+  .modal-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:9px;border:0;background:#20242e;color:var(--text-dim);font-size:20px;cursor:pointer;line-height:1;transition:.2s}
+  .modal-close:hover{background:#2a2f3a;color:#fff}
+  .modal-head{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+  .modal-ic{width:48px;height:48px;border-radius:13px;background:#20242e;display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+  .modal-name{font-size:20px;font-weight:700}
+  .modal-pct{font-size:14px;color:var(--text-dim);margin-top:2px}
+  .modal-bar{height:6px;border-radius:4px;background:#20242e;overflow:hidden;margin-bottom:16px}
+  .modal-bar span{display:block;height:100%;border-radius:4px;width:0;transition:width .7s ease .1s}
+  .modal-desc{font-size:14px;color:var(--text-dim);line-height:1.55;margin-bottom:20px}
+  .modal-vaje-title{font-size:14px;font-weight:600;color:#cdd3df;margin-bottom:10px}
+  .modal-vaje{display:flex;flex-direction:column;gap:9px}
+  .vaja{display:flex;align-items:center;justify-content:space-between;background:#14171e;border:1px solid #232833;border-radius:12px;padding:12px 14px;cursor:pointer;transition:.18s}
+  .vaja:hover{border-color:#3d4657;transform:translateX(3px)}
+  .vaja .vname{display:flex;align-items:center;gap:10px;font-size:14px;min-width:0}
+  .vaja .vname .arrow{color:var(--text-mute)}
+  .vaja .vmeta{display:flex;align-items:center;gap:10px;flex:none}
+  .vaja .vbar{width:46px;height:4px;border-radius:3px;background:#20242e;overflow:hidden}
+  .vaja .vbar span{display:block;height:100%;border-radius:3px}
+  .vaja .vpct{font-size:12.5px;font-weight:600;min-width:34px;text-align:right}
+  .vaja .lvl{font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px}
+  .lvl.Lahko{color:var(--green);background:rgba(55,209,122,.12)}
+  .lvl.Srednje{color:var(--yellow);background:rgba(242,181,58,.12)}
+  .lvl.Težko{color:var(--red);background:rgba(240,85,77,.12)}
+
   @media(max-width:1080px){
     .layout{grid-template-columns:1fr}
     .side{order:-1}
@@ -204,6 +257,9 @@
 
     .card{padding:18px}
     .ring{width:150px;height:150px}
+    .modal-card{padding:22px}
+    .vaja .vbar{display:none}
+    .vaja .vmeta{gap:8px}
   }
 </style>
 </head>
@@ -214,7 +270,8 @@
   <div class="segmented">
     <button>Vprašaj</button>
     <button>Priprava na test</button>
-    <button class="active">Moj razred</button>
+    <button>Moj razred</button>
+    <button class="active">Zemljevid znanja</button>
   </div>
   <div class="avatar">
     <div class="streak">🔥 0</div>
@@ -227,7 +284,18 @@
   <div class="main">
     <div class="heading">
       <h1>Zemljevid znanja</h1>
-      <span class="info">i</span>
+      <span class="info" id="infoBtn" tabindex="0" role="button" aria-label="Več informacij">i
+        <span class="tooltip" role="tooltip">
+          <b>Zemljevid znanja</b>
+          Vizualni pregled tvojega znanja po predmetih. Vsaka tema je obarvana glede na raven znanja:
+          <span class="tt-legend">
+            <span><i style="background:var(--green)"></i>Močno (≥ 70 %)</span>
+            <span><i style="background:var(--yellow)"></i>Srednje (≥ 50 %)</span>
+            <span><i style="background:var(--red)"></i>Šibko (&lt; 50 %)</span>
+          </span>
+          Klikni na temo za podrobnosti in priporočene vaje.
+        </span>
+      </span>
     </div>
 
     <div class="controls">
@@ -274,7 +342,45 @@
   </div>
 </div>
 
+<!-- Detail modal (Matematika only) -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button class="modal-close" id="modalClose" aria-label="Zapri">×</button>
+    <div class="modal-head">
+      <div class="modal-ic" id="mIc"></div>
+      <div>
+        <div class="modal-name" id="mName"></div>
+        <div class="modal-pct" id="mPct"></div>
+      </div>
+    </div>
+    <div class="modal-bar"><span id="mBar"></span></div>
+    <p class="modal-desc" id="mDesc"></p>
+    <div class="modal-vaje-title">Priporočene vaje</div>
+    <div class="modal-vaje" id="mVaje"></div>
+    <button class="cta" style="margin-top:16px">✦ Začni vadbo</button>
+  </div>
+</div>
+
 <script>
+/* ---------- Recommended exercises (Matematika) ---------- */
+// vaje: [ime, težavnost, procent] — povprečje treh = procent teme
+const MATH_DETAILS = {
+  'Algebra':    {desc:'Osnove računanja s spremenljivkami, izrazi in pravili.', vaje:[['Poenostavljanje izrazov','Lahko',84],['Faktorizacija','Srednje',74],['Ulomljeni izrazi','Težko',64]]},
+  'Enačbe':     {desc:'Reševanje linearnih in sestavljenih enačb.', vaje:[['Linearne enačbe','Lahko',91],['Enačbe z ulomki','Srednje',82],['Sistemi enačb','Težko',73]]},
+  'Neenačbe':   {desc:'Reševanje in grafični prikaz neenačb.', vaje:[['Linearne neenačbe','Lahko',79],['Neenačbe z absolutno vrednostjo','Srednje',68],['Kvadratne neenačbe','Težko',57]]},
+  'Geometrija': {desc:'Liki, koti, ploščine in obsegi v ravnini.', vaje:[['Koti in premice','Lahko',68],['Ploščina likov','Srednje',55],['Podobnost likov','Težko',42]]},
+  'Trikotniki': {desc:'Lastnosti trikotnikov, Pitagorov izrek, kotne funkcije.', vaje:[['Pitagorov izrek','Lahko',84],['Skladnost trikotnikov','Srednje',72],['Sinusni in kosinusni izrek','Težko',60]]},
+  'Krogi':      {desc:'Krog, krožnica, obseg, ploščina in krožni izsek.', vaje:[['Obseg in ploščina','Lahko',55],['Središčni in obodni kot','Srednje',41],['Krožni izsek in odsek','Težko',27]]},
+  'Funkcije':   {desc:'Pojem funkcije, definicijsko območje in graf.', vaje:[['Branje grafa','Lahko',61],['Definicijsko območje','Srednje',48],['Kompozicija funkcij','Težko',35]]},
+  'Linearna':   {desc:'Linearna funkcija, smerni koeficient in graf.', vaje:[['Naris premice','Lahko',87],['Smerni koeficient','Srednje',76],['Enačba premice iz točk','Težko',65]]},
+  'Kvadratna':  {desc:'Kvadratna funkcija, teme in ničle parabole.', vaje:[['Ničle parabole','Lahko',53],['Teme parabole','Srednje',39],['Uporabne naloge','Težko',25]]},
+  'Statistika': {desc:'Zbiranje podatkov, povprečje, mediana in razpršenost.', vaje:[['Aritmetična sredina','Lahko',79],['Mediana in modus','Srednje',67],['Standardni odklon','Težko',55]]},
+  'Analiza':    {desc:'Uvod v matematično analizo: limite, odvodi, integrali.', vaje:[['Zaporedja','Lahko',51],['Limita zaporedja','Srednje',38],['Zveznost funkcije','Težko',25]]},
+  'Limite':     {desc:'Limita funkcije in računanje limit.', vaje:[['Limita v točki','Lahko',46],['Nedoločene oblike','Srednje',34],['Limite v neskončnosti','Težko',22]]},
+  'Izvodi':     {desc:'Odvod funkcije in pravila odvajanja.', vaje:[['Odvod polinoma','Lahko',55],['Pravilo produkta','Srednje',42],['Odvod sestavljene funkcije','Težko',29]]},
+  'Integrali':  {desc:'Nedoločeni in določeni integral, ploščina pod krivuljo.', vaje:[['Osnovni integrali','Lahko',41],['Metoda substitucije','Srednje',28],['Ploščina pod krivuljo','Težko',15]]},
+};
+
 /* ---------- Data per subject ---------- */
 const clr = p => p>=70 ? 'var(--green)' : p>=50 ? 'var(--yellow)' : 'var(--red)';
 
@@ -458,6 +564,7 @@ function render(){
     el.onclick=()=>{
       document.querySelectorAll('.node').forEach(n=>n.classList.remove('selected'));
       el.classList.add('selected'); selected=nd.n;
+      if(current==='Matematika') openDetail(nd);
     };
     graph.appendChild(el);
     setTimeout(()=>{
@@ -486,6 +593,40 @@ function render(){
 }
 
 render();
+
+/* ---------- Detail modal (Matematika) ---------- */
+const modal = document.getElementById('modal');
+function openDetail(nd){
+  const info = MATH_DETAILS[nd.n] || {desc:'', vaje:[]};
+  const c = clr(nd.p);
+  document.getElementById('mIc').textContent = nd.ic;
+  document.getElementById('mName').textContent = nd.n;
+  document.getElementById('mPct').innerHTML = `<span style="color:${c};font-weight:600">${nd.p}%</span> obvladano`;
+  document.getElementById('mDesc').textContent = info.desc;
+  const bar = document.getElementById('mBar');
+  bar.style.background = c; bar.style.width = '0';
+  document.getElementById('mVaje').innerHTML = info.vaje.map(([name,lvl,vp])=>
+    `<div class="vaja">
+       <span class="vname"><span class="arrow">›</span>${name}</span>
+       <span class="vmeta">
+         <span class="vbar"><span style="width:${vp}%;background:${clr(vp)}"></span></span>
+         <span class="vpct" style="color:${clr(vp)}">${vp}%</span>
+         <span class="lvl ${lvl}">${lvl}</span>
+       </span>
+     </div>`
+  ).join('');
+  modal.classList.add('open');
+  requestAnimationFrame(()=>{ setTimeout(()=>bar.style.width = nd.p+'%', 60); });
+}
+function closeDetail(){ modal.classList.remove('open'); }
+document.getElementById('modalClose').onclick = closeDetail;
+modal.addEventListener('click', e=>{ if(e.target===modal) closeDetail(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDetail(); });
+
+/* ---------- Info tooltip (tap toggle) ---------- */
+const infoBtn = document.getElementById('infoBtn');
+infoBtn.addEventListener('click', e=>{ e.stopPropagation(); infoBtn.classList.toggle('open'); });
+document.addEventListener('click', ()=> infoBtn.classList.remove('open'));
 
 /* ---------- Zoom ---------- */
 let zoom = 1;
