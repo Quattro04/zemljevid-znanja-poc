@@ -1,6 +1,6 @@
 # Zemljevid znanja (POC)
 
-Interaktiven prototip pogleda **Zemljevid znanja** za učno platformo Astra AI. Prikazuje graf tem po posameznem predmetu, obarvan glede na raven znanja, ter stranski pregled napredka.
+Interaktiven prototip pogleda **Zemljevid znanja**. Prikazuje graf tem po posameznem predmetu, obarvan glede na raven znanja, ter stranski pregled napredka.
 
 Live na: https://quattro04.github.io/zemljevid-znanja-poc/
 
